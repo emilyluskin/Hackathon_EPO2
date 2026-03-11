@@ -18,7 +18,7 @@ def dsss_spread (bits, key):
     bits_list = [int(b) for b in bits]
 
     #repeat the key and bits
-    repeated_ascii_val = np.repeat(bits_list, key_len)
+    repeated_ascii_val = np.repeat(bits_list, len(key))
     repeated_key = np.tile(key, len(bits))
 
     #xor to get the key for bit 0 or flipped key for 1

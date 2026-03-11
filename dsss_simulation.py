@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from trans_poc import ascii_mess_val, generate_key, dsss_spread, bpsk_mod, final_signal, build_preamble
-from lpi_receiver import add_noise, find_peaks_in_corr, peak_classifier, bits_to_string,last_idx_preamble
+from lpi_receiver import add_noise, find_peaks_in_corr, peak_classifier, bits_to_string,last_idx_preamble, find_preamble
 
 # message
-message = "hidden message"
+message = "hidden message hi there"
 
 #barker
 barker_13_bits = [1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1]
@@ -15,7 +15,7 @@ bits = ascii_mess_val(message)
 bits_list = [int(b) for b in bits]
 
 seed = 42
-key_len = 1024
+key_len = 16
 key = generate_key(seed, key_len)
 spreaded_bits = dsss_spread(bits, key)
 modulated_data = bpsk_mod(spreaded_bits)
@@ -28,7 +28,7 @@ rx_signal = add_noise(signal)
 # RECEIVER
 
 #find preamble
-end_of_pre = last_idx_preamble(rx_signal, preamble)
+end_of_pre = find_preamble(rx_signal, preamble)
 rx_signal = rx_signal[end_of_pre:]
 
 pn = np.array(key)

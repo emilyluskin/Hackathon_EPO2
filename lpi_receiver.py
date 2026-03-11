@@ -44,10 +44,55 @@ def peak_classifier(peaks_val):
 def bits_to_string(bits):
     return ''.join(chr(int(''.join(map(str, bits[i:i+8])), 2)) for i in range(0, len(bits), 8))
 
+def find_preamble(signal, preamble, chunk_size=30, threshold_ratio=0.9):
+    signal = np.asarray(signal)
+    preamble = np.asarray(preamble)
+
+    L = len(preamble)
+    tail = np.array([], dtype=signal.dtype)
+    preamble_energy = np.dot(preamble, preamble)
+    threshold = threshold_ratio * preamble_energy
+
+    best_peak_val = -np.inf
+    best_start_idx = None
+
+    for i in range(0, len(signal), chunk_size):
+        chunk = signal[i:i + chunk_size]
+
+        # overlap
+        search_buffer = np.concatenate([tail, chunk])
+
+        # if the search buffer is smaller than the preamble, we can't correlate yet - save it for the next round
+        if len(search_buffer) < L:
+            tail = search_buffer
+            continue
+
+        corr = np.correlate(search_buffer, preamble, mode='valid')
+
+        local_peak_idx = np.argmax(np.abs(corr))
+        local_peak_val = np.abs(corr[local_peak_idx])
+
+        local_start_idx = i - len(tail) + local_peak_idx
+
+        #save the best peak found so far
+        if local_peak_val > best_peak_val:
+            best_peak_val = local_peak_val
+            best_start_idx = local_start_idx
+
+        # save the last L-1 samples for the next chunk
+        tail = search_buffer[-(L - 1):]
+
+    if best_start_idx is not None and best_peak_val > threshold:
+        print(f"Best preamble found at index {best_start_idx}, corr={best_peak_val}")
+        return best_start_idx + L
+
+    return None
+
 def last_idx_preamble(signal,preamble):
     
     corr = np.correlate(signal, preamble)
     start_idx_preamble = np.argmax(corr)
+    
         # 3. יצירת הגרף
     plt.figure(figsize=(10, 6))
 
@@ -66,7 +111,7 @@ def last_idx_preamble(signal,preamble):
 
     # plt.tight_layout()
     # plt.show()
-
+    print(start_idx_preamble+len(preamble))
     return (start_idx_preamble +len(preamble))
 
 if __name__ == "__main__":
@@ -98,7 +143,10 @@ if __name__ == "__main__":
 
     #find preamble
 
-    end_of_pre = last_idx_preamble(input_data, spreaded_bpsk_preamble)
+    end_of_pre = find_preamble(input_data, spreaded_bpsk_preamble)
+    if end_of_pre is None:
+        print("preamble not found")
+        exit()
     input_data = input_data[end_of_pre:]
 
     #find thepeaks in correlation

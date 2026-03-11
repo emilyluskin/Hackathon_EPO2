@@ -20,7 +20,9 @@ def add_noise(data):
 def find_peaks_in_corr(input_data, modulated_key ):
     #correlation between the key and the 
     corr = np.correlate(input_data, modulated_key)
+    print("corr",corr)
     peaks_val = [corr[i*len(modulated_key)] for i in range(int(len(input_data)/len(modulated_key)))]
+    print("peaks val",peaks_val)
 
     return peaks_val
 
@@ -46,6 +48,24 @@ def last_idx_preamble(signal,preamble):
     
     corr = np.correlate(signal, preamble)
     start_idx_preamble = np.argmax(corr)
+        # 3. יצירת הגרף
+    plt.figure(figsize=(10, 6))
+
+    # # ציור ערכי הקורלציה
+    # plt.plot(corr, label='Correlation Value', color='blue', alpha=0.7)
+
+    # # סימון נקודת המקסימום (המיקום המזוהה)
+    # plt.scatter(start_idx_preamble, corr[start_idx_preamble], color='red', s=50, zorder=5, 
+    #             label=f'Peak found at index {start_idx_preamble}')
+    # plt.axvline(x=start_idx_preamble, color='red', linestyle='--', alpha=0.5)
+    # plt.title('Correlation between Signal and Preamble')
+    # plt.xlabel('Signal Index')
+    # plt.ylabel('Correlation Amplitude')
+    # plt.legend()
+    # plt.grid(True, linestyle=':', alpha=0.6)
+
+    # plt.tight_layout()
+    # plt.show()
 
     return (start_idx_preamble +len(preamble))
 
@@ -56,7 +76,7 @@ if __name__ == "__main__":
     sps = 1
     # Create the key
     seed = 42
-    key_len = 4
+    key_len = 8
     key = generate_key(seed,key_len)
 
     # Perform upsampling according to the sps - for the correlation

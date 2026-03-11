@@ -1,26 +1,36 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from trans_poc import ascii_mess_val, generate_key, dsss_spread, bpsk_mod
-from lpi_receiver import add_noise, find_peaks_in_corr, peak_classifier, bits_to_string
+from trans_poc import ascii_mess_val, generate_key, dsss_spread, bpsk_mod, final_signal, build_preamble
+from lpi_receiver import add_noise, find_peaks_in_corr, peak_classifier, bits_to_string,last_idx_preamble
 
 # message
 message = "hidden message"
+
+#barker
+barker_13_bits = [1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1]
 
 # TRANSMITTER
 bits = ascii_mess_val(message)
 bits_list = [int(b) for b in bits]
 
 seed = 42
-key_len = 64
+key_len = 1024
 key = generate_key(seed, key_len)
 spreaded_bits = dsss_spread(bits, key)
-modulated = bpsk_mod(spreaded_bits)
+modulated_data = bpsk_mod(spreaded_bits)
+preamble = build_preamble(barker_13_bits, key)#bpsk and spreaded
+signal = final_signal(preamble, modulated_data)
 
 # CHANNEL
-rx_signal = add_noise(modulated)
+rx_signal = add_noise(signal)
 
 # RECEIVER
+
+#find preamble
+end_of_pre = last_idx_preamble(rx_signal, preamble)
+rx_signal = rx_signal[end_of_pre:]
+
 pn = np.array(key)
 pn_bpsk = bpsk_mod(pn)
 corr = np.correlate(rx_signal, pn_bpsk, mode='full')
@@ -47,7 +57,7 @@ plt.plot(spreaded_bits)
 
 plt.subplot(6,1,3)
 plt.title("BPSK Modulated Signal")
-plt.plot(modulated)
+plt.plot(modulated_data)
 
 plt.subplot(6,1,4)
 plt.title("Received Signal with Noise")

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 import random
+from trans_poc import ascii_mess_val, generate_key, dsss_spread, bpsk_mod, final_signal, build_preamble
 
 def bpsk_mod(bits):
 
@@ -41,8 +42,16 @@ def peak_classifier(peaks_val):
 def bits_to_string(bits):
     return ''.join(chr(int(''.join(map(str, bits[i:i+8])), 2)) for i in range(0, len(bits), 8))
 
+def last_idx_preamble(signal,preamble):
+    
+    corr = np.correlate(signal, preamble)
+    start_idx_preamble = np.argmax(corr)
+
+    return (start_idx_preamble +len(preamble))
 
 if __name__ == "__main__":
+
+    barker_13_bits = [1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1]
 
     sps = 1
     # Create the key
@@ -50,7 +59,7 @@ if __name__ == "__main__":
     key_len = 4
     key = generate_key(seed,key_len)
 
-    # Perform upsampling according to the sps 
+    # Perform upsampling according to the sps - for the correlation
     upsampled_key = np.repeat(key, sps)
 
     #bpsk modulation
@@ -58,8 +67,19 @@ if __name__ == "__main__":
 
     input_data = [-1, -1, 1, -1, 1, 1, -1, 1, 1, 1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, -1, -1, 1, -1, -1, -1, 1, -1]
 
+    #build preamble
+    spreaded_bpsk_preamble = build_preamble(barker_13_bits,key)
+
+    #add preamble to the signal
+    signal_trs = final_signal(spreaded_bpsk_preamble,input_data )
+
     #adding noise in channel
-    input_data = add_noise(input_data)
+    input_data = add_noise(signal_trs)
+
+    #find preamble
+
+    end_of_pre = last_idx_preamble(input_data, spreaded_bpsk_preamble)
+    input_data = input_data[end_of_pre:]
 
     #find thepeaks in correlation
     peaks_val = find_peaks_in_corr(input_data, modulated_key )

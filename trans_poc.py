@@ -30,20 +30,40 @@ def bpsk_mod (bits):
 
     return [1 if b==1 else -1 for b in bits]
 
+def build_preamble(preamble,key):
+    spread_pre = dsss_spread(preamble,key)
+    bpsk_pre = bpsk_mod(spread_pre)
+    return bpsk_pre
+
+def final_signal(preamble, data):
+
+    return (preamble + data)
 
 if __name__ == "__main__":
 
+    barker_13_bits = [1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1]
+    print("barker", barker_13_bits)
     message = "h"
     bits = ascii_mess_val(message)
     print("ascii",bits)
 
     seed = 42
-    key_len = 4
+    key_len = 2
     key =  generate_key(seed,key_len)
     print ("key",key)
 
     spreaded_bits = dsss_spread (bits, key)
-    print("spread" ,spreaded_bits)
+    print("spread bits" ,spreaded_bits)
 
+    spreaded_bpsk_preamble = build_preamble(barker_13_bits,key)
+    print("preamble", spreaded_bpsk_preamble)
     signal_mod = bpsk_mod(spreaded_bits)
-    print("modulation" ,signal_mod)
+    print("modulation signal" ,signal_mod)
+
+    signal_trs = final_signal(spreaded_bpsk_preamble,signal_mod )
+    print("pre+signal",signal_trs )
+
+
+    # a=np.array([1,1])
+    # b=np.array([0,2,3])
+    # print(np.concatenate((a,b)))
